@@ -30,10 +30,6 @@ streamlit run dashboard.py
 
 ## 🌐 Live Dashboard
 Dashboard ini juga telah di-deploy ke Streamlit Community Cloud. Anda dapat mengaksesnya secara langsung melalui tautan berikut:
-`Klik di sini untuk membuka Dashboard E-Commerce Olist`
+`https://ilvdaktazuastjkwei2rcz.streamlit.app/`
 
-<<<<<<< HEAD
 _Created by [Dary Ihsan Amanullah] - 2026_
-=======
-_Created by [Dary Ihsan Amanullah] - 2026_
->>>>>>> 92f9fb8d6a5cc685121ca1adf2a7d0350704f11d
