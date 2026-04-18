@@ -199,7 +199,7 @@ st.pyplot(fig)
 
 st.subheader("Demographics by City")
 
-fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(24, 8))
+fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(24, 12))
 
 # Chart kiri customers
 sns.barplot(x="count", y="customer_city", data=customer_city_df, ax=ax[0], palette=colors_10, hue="customer_city", legend=False)
@@ -211,6 +211,7 @@ sns.barplot(x="count", y="seller_city", data=seller_city_df, ax=ax[1], palette=c
 ax[1].set_title("Demography City of Sellers", loc="center", fontsize=20)
 ax[1].tick_params(axis='y', labelsize=15)
 
+plt.tight_layout()
 st.pyplot(fig)
 
 # RFM Analysis
