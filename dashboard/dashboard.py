@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
 from babel.numbers import format_currency
+import os
 
 sns.set(style='dark')
 
@@ -52,9 +53,11 @@ def create_bycity_df(df, entity="customer"):
 
     return bycity_df.sort_values(by="count", ascending=False).head(10)
 
+pwd = os.path.dirname(__file__)
+
 # Load data yang sudah diekspor dari notebook
-main_df = pd.read_csv("main_data.csv")
-rfm_df = pd.read_csv("rfm_data.csv")
+main_df = pd.read_csv(os.path.join(pwd, "main_data.csv"))
+rfm_df = pd.read_csv(os.path.join(pwd, "rfm_data.csv"))
 
 main_df["order_purchase_timestamp"] = pd.to_datetime(main_df["order_purchase_timestamp"])
 
