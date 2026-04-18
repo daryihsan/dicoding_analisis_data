@@ -199,7 +199,7 @@ st.pyplot(fig)
 
 st.subheader("Demographics by City")
 
-fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(24, 12))
+fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(24, 8))
 
 # Chart kiri customers
 sns.barplot(x="count", y="customer_city", data=customer_city_df, ax=ax[0], palette=colors_10, hue="customer_city", legend=False)
