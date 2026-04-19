@@ -66,6 +66,21 @@ def create_rfm_df(df):
     rfm_df["recency"] = rfm_df["max_order_timestamp"].dt.date.apply(lambda x: (recent_date - x).days)
     return rfm_df
 
+def create_rfm_state_df(rfm_df, df):
+    rfm_geo = pd.merge(
+        rfm_df,
+        df[['customer_unique_id', 'customer_state']],
+        on='customer_unique_id',
+        how='left'
+    )
+
+    rfm_state = rfm_geo.groupby('customer_state').agg({
+        'recency': 'mean',
+        'frequency': 'mean',
+        'monetary': 'mean'
+    }).reset_index()
+
+    return rfm_state.sort_values(by='monetary', ascending=False).head(5)
 
 # Load data yang sudah diekspor dari notebook
 pwd = os.path.dirname(__file__)
@@ -104,6 +119,7 @@ seller_state_df = create_bystate_df(main_df_filtered, entity="seller")
 customer_city_df = create_bycity_df(main_df_filtered, entity="customer")
 seller_city_df = create_bycity_df(main_df_filtered, entity="seller")
 rfm_df = create_rfm_df(main_df_filtered)
+rfm_state_df = create_rfm_state_df(rfm_df, main_df_filtered)
 
 # Main dashboard
 st.header('🛍️ E-Commerce Dashboard')
@@ -159,19 +175,22 @@ ax[1].tick_params(axis='y', labelsize=15)
 
 st.pyplot(fig)
 
-st.subheader("Best & Worst Performing Products")
+st.subheader("Best & Worst Performing Products by Number of Sales")
 
 fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(24, 8))
-top_5_products = product_sales_df.sort_values(by="total_sales", ascending=False).head(5)
-bottom_5_products = product_sales_df.sort_values(by="total_sales", ascending=True).head(5)
+top_products = product_sales_df.sort_values(by="total_sales", ascending=False).head(5).copy()
+bottom_products = product_sales_df.sort_values(by="total_sales", ascending=True).head(5).copy()
+
+top_products['label'] = [f'Top Product {i}' for i in range (1,6)]
+bottom_products['label'] = [f'Low Product {i}' for i in range (1,6)]
 
 # Chart kiri best performing
-sns.barplot(x="total_sales", y="product_id", data=top_5_products, ax=ax[0], palette=colors_5, hue="product_id", legend=False)
+sns.barplot(x="total_sales", y="label", data=top_products, ax=ax[0], palette=colors_5, hue="product_id", legend=False)
 ax[0].set_title("Best Performing Products", loc="center", fontsize=20)
 ax[0].tick_params(axis='y', labelsize=15)
 
 # Chart kanan worst performing
-sns.barplot(x="total_sales", y="product_id", data=bottom_5_products, ax=ax[1], palette=colors_5, hue="product_id", legend=False)
+sns.barplot(x="total_sales", y="label", data=bottom_products, ax=ax[1], palette=colors_5, hue="product_id", legend=False)
 ax[1].invert_xaxis()
 ax[1].yaxis.set_label_position("right")
 ax[1].yaxis.tick_right()
@@ -214,8 +233,8 @@ ax[1].tick_params(axis='y', labelsize=15)
 plt.tight_layout()
 st.pyplot(fig)
 
-# RFM Analysis
-st.subheader("Best Customers Based on RFM Parameters (customer_unique_id)")
+# RFM Analysis Individual Customers
+st.subheader("Best Customers Based on RFM Parameters")
 
 col1, col2, col3 = st.columns(3)
 
@@ -226,19 +245,46 @@ with col2:
 with col3:
     st.metric("Average Monetary", value=format_currency(rfm_df.monetary.mean(), "BRL", locale='pt_BR'))
 
+top_recency = rfm_df.sort_values(by="recency", ascending=True).head(5).copy()
+top_frequency = rfm_df.sort_values(by="frequency", ascending=False).head(5).copy()
+top_monetary = rfm_df.sort_values(by="monetary", ascending=False).head(5).copy()
+
+top_recency['label'] = [f'Top Recency {i}' for i in range(1, 6)]
+top_frequency['label'] = [f'Top Frequency {i}' for i in range(1, 6)]
+top_monetary['label'] = [f'Top Monetary {i}' for i in range(1, 6)]
+
 fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(30, 10))
 
-sns.barplot(y="recency", x="customer_unique_id", data=rfm_df.sort_values(by="recency", ascending=True).head(5), palette=colors_5, ax=ax[0], hue="customer_unique_id", legend=False)
-ax[0].set_title("By Recency (days)", loc="center", fontsize=18)
-ax[0].tick_params(axis='x', labelsize=10, rotation=45)
+sns.barplot(y="recency", x="label", data=top_recency, palette=colors_5, ax=ax[0])
+ax[0].set_title("Top Customers by Recency (days)")
+ax[0].set_xlabel(None)
+ax[0].set_ylabel(None)
 
-sns.barplot(y="frequency", x="customer_unique_id", data=rfm_df.sort_values(by="frequency", ascending=False).head(5), palette=colors_5, ax=ax[1], hue="customer_unique_id", legend=False)
-ax[1].set_title("By Frequency", loc="center", fontsize=18)
-ax[1].tick_params(axis='x', labelsize=10, rotation=45)
+sns.barplot(y="frequency", x="label", data=top_frequency, palette=colors_5, ax=ax[1])
+ax[1].set_title("Top Customers by Frequency")
+ax[1].set_xlabel(None)
+ax[1].set_ylabel(None)
 
-sns.barplot(y="monetary", x="customer_unique_id", data=rfm_df.sort_values(by="monetary", ascending=False).head(5), palette=colors_5, ax=ax[2], hue="customer_unique_id", legend=False)
-ax[2].set_title("By Monetary", loc="center", fontsize=18)
-ax[2].tick_params(axis='x', labelsize=10, rotation=45)
+sns.barplot(y="monetary", x="label", data=top_monetary, palette=colors_5, ax=ax[2])
+ax[2].set_title("Top Customers by Monetary")
+ax[2].set_xlabel(None)
+ax[2].set_ylabel(None)
+
+st.pyplot(fig)
+
+# RFM Analysis by State
+st.subheader("Customer RFM Aggregation by State")
+
+fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(30, 8))
+
+sns.barplot(x='recency', y='customer_state', data=rfm_state_df.sort_values(by="recency", ascending=False), palette=colors_5, ax=ax[0])
+ax[0].set_title("Avg Recency by State")
+
+sns.barplot(x='frequency', y='customer_state', data=rfm_state_df.sort_values(by="frequency", ascending=False), palette=colors_5, ax=ax[1])
+ax[1].set_title("Avg Frequency by State")
+
+sns.barplot(x='monetary', y='customer_state', data=rfm_state_df.sort_values(by="monetary", ascending=False), palette=colors_5, ax=ax[2])
+ax[2].set_title("Avg Monetary by State")
 
 st.pyplot(fig)
 
